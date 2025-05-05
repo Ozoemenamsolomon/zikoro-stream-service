@@ -1,0 +1,38 @@
+services:
+  mediasoup-server:
+    # platform: linux/amd64
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - TARGETPLATFORM=linux/amd64
+    container_name: mediasoup-server
+    ports:
+      - "3000:3000"
+      - "42000-42030:42000-42030/udp"
+    shm_size: '2gb'
+    restart: unless-stopped
+    cap_add:
+      - SYS_ADMIN
+      - NET_ADMIN
+    env_file:
+      - .env  
+    volumes:
+      - ./cert:/app/cert:ro
+    networks:
+      - app-network
+    # ulimits:
+    #   memlock:
+    #     soft: -1
+    #     hard: -1
+    #   nofile:
+    #     soft: 65536
+    #     hard: 65536 68.183.79.177
+
+networks:
+  app-network:
+    driver: bridge
+
+
+
+
