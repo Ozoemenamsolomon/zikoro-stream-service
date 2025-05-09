@@ -10,8 +10,8 @@ export const config = {
   
       // mediasoup Worker settings
       workerSettings: {
-        dtlsCertificateFile : process.env.SSL_CERT,
-			dtlsPrivateKeyFile  : process.env.SSL_KEY,
+      //   dtlsCertificateFile : process.env.SSL_CERT,
+			// dtlsPrivateKeyFile  : process.env.SSL_KEY,
         logLevel: "warn",
         logTags: ["info", "ice", "dtls", "rtp", "srtp", "rtcp"],
          rtcMinPort: 42000,
@@ -84,7 +84,7 @@ export const config = {
 				{
 					protocol         : 'udp' as TransportProtocol,
 					ip               : process.env.MEDIASOUP_LISTEN_IP || '0.0.0.0',
-					announcedAddress : process.env.MEDIASOUP_ANNOUNCED_IP || '192.168.115.187',
+					announcedAddress : process.env.MEDIASOUP_ANNOUNCED_IP || '192.168.208.187',
 					portRange        :
 					{
 						min :  42000,
@@ -94,7 +94,7 @@ export const config = {
 				{
 					protocol         : 'tcp' as TransportProtocol,
 					ip               : process.env.MEDIASOUP_LISTEN_IP || '0.0.0.0',
-					announcedAddress : process.env.MEDIASOUP_ANNOUNCED_IP || '192.168.115.187',
+					announcedAddress : process.env.MEDIASOUP_ANNOUNCED_IP || '192.168.208.187',
 					portRange        :
 					{
 						min :  42000,

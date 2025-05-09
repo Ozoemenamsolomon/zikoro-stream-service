@@ -1,9 +1,4 @@
-import {
-  App,
-  DEDICATED_COMPRESSOR_3KB,
-  SSLApp,
-  type WebSocket,
-} from "uWebSockets.js";
+import { App, DEDICATED_COMPRESSOR_3KB, type WebSocket } from "uWebSockets.js";
 import * as mediasoup from "mediasoup";
 import type {
   Worker,
@@ -12,7 +7,6 @@ import type {
   Producer,
   Consumer,
   Transport,
-  RtpCapabilities,
 } from "mediasoup/node/lib/types";
 import { config } from "./config";
 import { v4 as uuidv4 } from "uuid";
@@ -44,6 +38,7 @@ interface Peer {
   producers: Map<string, Producer>;
   consumers: Map<string, Consumer>;
   isHost: boolean;
+  isInvitee: boolean;
   status: {
     audioMuted: boolean;
     videoMuted: boolean;
@@ -77,14 +72,8 @@ process.on("uncaughtException", (error) => {
 async function createWorkers() {
   const { numWorkers, workerSettings } = config.mediasoup;
 
-  console.log(JSON.stringify(workerSettings))
-  console.log(JSON.stringify({
-    ...process.env
-  }))
   for (let i = 0; i < numWorkers; i++) {
     const worker = await mediasoup.createWorker({
-      dtlsCertificateFile: workerSettings.dtlsCertificateFile,
-      dtlsPrivateKeyFile: workerSettings.dtlsPrivateKeyFile,
       logLevel: workerSettings.logLevel as any,
       logTags: workerSettings.logTags as any,
       rtcMinPort: workerSettings.rtcMinPort,
@@ -239,7 +228,7 @@ function sendError(ws: WebSocket<SocketData>, message: string) {
 }
 
 async function handleJoinRoom(ws: WebSocket<SocketData>, data: any) {
-  const { roomId, peerId, peerName, isHost, rtpCapabilities } = data;
+  const { roomId, peerId, peerName, isHost, isInvitee, rtpCapabilities } = data;
 
   try {
     const room = await getOrCreateRoom(roomId);
@@ -252,6 +241,9 @@ async function handleJoinRoom(ws: WebSocket<SocketData>, data: any) {
       producers: new Map(),
       consumers: new Map(),
       isHost,
+      isInvitee,
+      // set initial status of audio, and video to false for now
+      // this will change based on preference when user join
       status: {
         audioMuted: false,
         videoMuted: false,
@@ -268,6 +260,7 @@ async function handleJoinRoom(ws: WebSocket<SocketData>, data: any) {
       peerId,
       peerName,
       isHost,
+      isInvitee,
     });
 
     const peerInfos = Array.from(room.peers.entries())
@@ -276,7 +269,10 @@ async function handleJoinRoom(ws: WebSocket<SocketData>, data: any) {
         id,
         name: p.name,
         isHost: p.isHost,
+        isInvitee: p.isInvitee,
       }));
+
+      console.log(JSON.stringify(peerInfos))
 
     ws.send(
       JSON.stringify({
@@ -322,8 +318,8 @@ async function handleCreateTransport(ws: WebSocket<SocketData>, data: any) {
     //   } catch (error) {}
     // }
 
-    //> START for only streaming
-    if (direction === "send" && !peer.isHost) {
+    //> START  ---> for only streaming
+    if (direction === "send" && !peer.isHost && !peer.isInvitee) {
       console.log("Non-host attempted to create send transport");
       throw new Error("Only host can create send transport");
     }
@@ -654,6 +650,7 @@ async function handleGetProducers(ws: WebSocket<SocketData>, data: any) {
     //     kind: producer.kind,
     //   }))
     // );
+    console.log("peer", JSON.stringify(room.peers.values()))
 
     const producers = Array.from(room.peers.values()).flatMap((peer) =>
       Array.from(peer.producers.values()).map((producer) => ({
@@ -897,15 +894,7 @@ function handleLeaveRoom(ws: WebSocket<SocketData>, data: any) {
 async function startServer() {
   await createWorkers();
 
-  const app =
-    process.env.NODE_ENV === "production" &&
-    process.env.SSL_KEY &&
-    process.env.SSL_CERT
-      ? SSLApp({
-          key_file_name: process.env.SSL_KEY,
-          cert_file_name: process.env.SSL_CERT,
-        })
-      : App();
+  const app = App();
 
   // Add CORS middleware for HTTP requests
   app.any("/*", (res, req) => {

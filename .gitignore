@@ -1,3 +1,5 @@
 /node_modules
 .env
 *.pem
+Dockerfile
+docker-compose.yml
