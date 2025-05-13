@@ -203,11 +203,14 @@ function handleSocketMessage(
       case "speaking":
         handleSpeakingStatus(ws, data);
         break;
+        case "video-status":
+          handleVideoStatus(ws, data);    
       case "live-stream-state":
         handleLiveStreamState(ws, data);
         break;
       case "get-router-capabilities":
         handleGetRouterCapabilities(ws, data);
+     
         break;
       default:
         console.warn(`Unknown message type: ${type}`);
@@ -418,6 +421,22 @@ async function handleProduce(ws: WebSocket<SocketData>, data: any) {
     }
 
     const producer = await transport.produce({ kind, rtpParameters });
+
+    if (peer) {
+      //> Close existing video producers from same source
+      Array.from(peer.producers.values()).forEach(prod => {
+        if (prod.kind === kind && prod.appData.source === data.appData?.source) {
+          prod.close();
+          peer.producers.delete(prod.id);
+          
+          broadcastToRoom(roomId, {
+            type: "producer-closed",
+            producerId: prod.id,
+            peerId
+          });
+        }
+      });
+    }
     peer.producers.set(producer.id, producer);
 
     producer.on("transportclose", () => {
@@ -434,6 +453,7 @@ async function handleProduce(ws: WebSocket<SocketData>, data: any) {
         producerId: producer.id,
         peerId,
         kind,
+      source: data.appData?.source || 'webcam'
       },
       peerId
     );
@@ -655,6 +675,9 @@ async function handleGetProducers(ws: WebSocket<SocketData>, data: any) {
     const producers = Array.from(room.peers.values()).flatMap((peer) =>
       Array.from(peer.producers.values()).map((producer) => ({
         peerId: peer.id,
+        peerName: peer.name,
+        isHost: peer.isHost,
+        isInvitee: peer.isInvitee,
         producerId: producer.id,
         kind: producer.kind,
       }))
@@ -830,6 +853,30 @@ function handleSpeakingStatus(ws: WebSocket<SocketData>, data: any) {
   } catch (error) {
     console.error("Error handling speaking status:", error);
     sendError(ws, "Error handling speaking status");
+  }
+}
+
+function handleVideoStatus(ws: WebSocket<SocketData>, data: any) {
+  const { roomId, peerId, enabled } = data;
+  const room = rooms.get(roomId);
+  
+  try {
+    if (room) {
+      const peer = room.peers.get(peerId);
+      if (peer) {
+        peer.status.videoMuted = enabled;
+        
+        broadcastToRoom(roomId, {
+          type: "peer-video-update",
+          peerId,
+          enabled
+        });
+      }
+    }
+  }
+  catch(error) {
+    console.error("Error handling video status", error);
+    sendError(ws, "Error handling video status")
   }
 }
 
