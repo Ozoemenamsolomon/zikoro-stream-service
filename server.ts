@@ -135,8 +135,8 @@ async function createWebRtcTransport(router: Router) {
     enableTcp: true,
     preferUdp: true,
     initialAvailableOutgoingBitrate,
-    appData: { type: "simulcast" },
-    numSctpStreams: { OS: 1024, MIS: 1024 },
+    // appData: { type: "simulcast" },
+    // numSctpStreams: { OS: 1024, MIS: 1024 },
   });
 }
 
@@ -524,10 +524,10 @@ async function handleConsume(ws: WebSocket<SocketData>, data: any) {
       paused: true,
       enableRtx: true,
       ignoreDtx: true,
-      preferredLayers: {
-        spatialLayer: 2, 
-        temporalLayer: 2 
-      }
+      // preferredLayers: {
+      //   spatialLayer: 2, 
+      //   temporalLayer: 2 
+      // }
     
     });
 
