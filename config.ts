@@ -45,7 +45,7 @@ export const config = {
               "x-google-start-bitrate": 300,
               "x-google-max-bitrate": 1500,
               "useinbandfec": 1,
-              "scalabilityMode": "L3T3"   
+            //  "scalabilityMode": "L3T3"   
             },
             rtcpFeedback: [
               //> Enable Negative Acknowledgment
@@ -100,7 +100,7 @@ export const config = {
 				{
 					protocol         : 'udp' as TransportProtocol,
 					ip               : process.env.MEDIASOUP_LISTEN_IP || '0.0.0.0',
-					announcedAddress : process.env.MEDIASOUP_ANNOUNCED_IP || '192.168.250.187',
+					announcedAddress : process.env.MEDIASOUP_ANNOUNCED_IP || '192.168.144.187',
 					portRange        :
 					{
 						min :  42000,
@@ -110,7 +110,7 @@ export const config = {
 				{
 					protocol         : 'tcp' as TransportProtocol,
 					ip               : process.env.MEDIASOUP_LISTEN_IP || '0.0.0.0',
-					announcedAddress : process.env.MEDIASOUP_ANNOUNCED_IP || '192.168.250.187',
+					announcedAddress : process.env.MEDIASOUP_ANNOUNCED_IP || '192.168.144.187',
 					portRange        :
 					{
 						min :  42000,

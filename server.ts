@@ -135,6 +135,8 @@ async function createWebRtcTransport(router: Router) {
     enableTcp: true,
     preferUdp: true,
     initialAvailableOutgoingBitrate,
+    appData: { type: "simulcast" },
+    numSctpStreams: { OS: 1024, MIS: 1024 },
   });
 }
 
@@ -331,6 +333,8 @@ async function handleCreateTransport(ws: WebSocket<SocketData>, data: any) {
     peer.transports.set(transport.id, transport);
     peer.transports.set(direction, transport);
 
+   // await transport.enableTraceEvent(['bwe']);
+
     transport.on("icestatechange", (state) => {
       console.log(`ICE state change for ${peerId}: ${state}`);
     });
@@ -520,6 +524,11 @@ async function handleConsume(ws: WebSocket<SocketData>, data: any) {
       paused: true,
       enableRtx: true,
       ignoreDtx: true,
+      preferredLayers: {
+        spatialLayer: 2, 
+        temporalLayer: 2 
+      }
+    
     });
 
     // Store the Consumer
@@ -577,13 +586,15 @@ async function handleConsume(ws: WebSocket<SocketData>, data: any) {
       );
     });
 
+    console.log("consumer type:", consumer.type);
+
     //> Will be useful for PREMIUM
-    if (consumer.type === "simulcast") {
-      await consumer.setPreferredLayers({
-        spatialLayer: 2,
-        temporalLayer: 2,
-      });
-    }
+    // if (consumer.type === "simulcast") {
+    //   await consumer.setPreferredLayers({
+    //     spatialLayer: 2,
+    //     temporalLayer: 2,
+    //   });
+    // }
 
     // Send consumer parameters to client
     ws.send(
